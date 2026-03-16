@@ -22,6 +22,11 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now,
     },
+    // Web Push subscription (stored after user grants notification permission)
+    pushSubscription: {
+        type: Object,
+        default: null,
+    },
 });
 
 // Method to generate JWT token
@@ -29,7 +34,7 @@ userSchema.methods.generateAuthToken = function () {
     const token = jwt.sign(
         { _id: this._id, email: this.email, name: this.name },
         process.env.JWT_SECRET || "your_secret_key_here",
-        { expiresIn: "7d" }
+        { expiresIn: "3h" }
     );
     return token;
 };

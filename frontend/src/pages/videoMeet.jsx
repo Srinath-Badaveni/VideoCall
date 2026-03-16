@@ -1,7 +1,8 @@
 import React, { useRef, useState, useEffect, useCallback } from "react";
 import io from "socket.io-client";
+import server_api from "../config/api";
 
-const server_url = "http://localhost:8080";
+const server_url = server_api;
 
 const peerConnectionConfig = {
     iceServers: [

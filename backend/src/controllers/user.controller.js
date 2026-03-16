@@ -141,3 +141,22 @@ export const getUserProfile = async (req, res) => {
         });
     }
 };
+
+// 🧩 GET ALL USERS (Protected — for invite / user-list sidebar)
+export const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.find(
+            { _id: { $ne: req.user._id } }, // exclude the requesting user
+            { name: 1, email: 1 }
+        ).sort({ name: 1 });
+
+        res.status(httpStatus.OK).json({ status: httpStatus.OK, users });
+    } catch (error) {
+        console.error("Get All Users Error:", error.message);
+        res.status(httpStatus.INTERNAL_SERVER_ERROR).json({
+            status: httpStatus.INTERNAL_SERVER_ERROR,
+            message: "Server error",
+            error: error.message,
+        });
+    }
+};
