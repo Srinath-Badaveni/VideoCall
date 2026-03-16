@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useChat } from "../contexts/ChatContext";
 import { API_BASE } from "../config/api";
+import InviteToast from "../components/InviteToast";
 
 /* ── Utilities ───────────────────────────────────────────────────────────── */
 const fmt = (iso) =>
@@ -39,44 +40,8 @@ const BackIcon   = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentCol
 const InviteIcon = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M16 11c1.657 0 3-1.343 3-3s-1.343-3-3-3M21 21v-2a4 4 0 00-3-3.87M13 7a4 4 0 11-8 0 4 4 0 018 0zM3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/></svg>;
 const DmIcon     = () => <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-3.5 h-3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>;
 
-/* ── InviteToast ─────────────────────────────────────────────────────────── */
-const InviteToast = () => {
-    const { pendingInvite, inviteNotification, acceptInvitation, rejectInvitation } = useChat();
-    if (!pendingInvite && !inviteNotification) return null;
+/* InviteToast is imported from ../components/InviteToast */
 
-    return (
-        <div className="fixed top-5 right-5 z-50 flex flex-col gap-3 max-w-sm">
-            {pendingInvite && (
-                <div className="bg-gray-900 border border-violet-500/60 rounded-2xl p-4 shadow-2xl shadow-violet-900/40 slide-in">
-                    <p className="text-sm font-semibold text-violet-200 mb-1">🎉 Room Invitation</p>
-                    <p className="text-gray-300 text-sm mb-3">
-                        <span className="text-white font-bold">{pendingInvite.fromName}</span> invited you to{" "}
-                        <span className="text-violet-300 font-bold">#{pendingInvite.roomId}</span>
-                    </p>
-                    <div className="flex gap-2">
-                        <button onClick={() => acceptInvitation(pendingInvite.inviteId)}
-                            className="flex-1 bg-green-600 hover:bg-green-500 text-white py-1.5 rounded-lg text-xs font-bold transition">
-                            ✓ Accept
-                        </button>
-                        <button onClick={() => rejectInvitation(pendingInvite.inviteId)}
-                            className="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-200 py-1.5 rounded-lg text-xs font-bold transition">
-                            ✕ Decline
-                        </button>
-                    </div>
-                </div>
-            )}
-            {inviteNotification && (
-                <div className={`rounded-2xl p-4 shadow-xl text-sm font-semibold slide-in ${
-                    inviteNotification.type === "success"
-                        ? "bg-green-900/80 border border-green-500/50 text-green-200"
-                        : "bg-red-900/80 border border-red-500/50 text-red-200"
-                }`}>
-                    {inviteNotification.message}
-                </div>
-            )}
-        </div>
-    );
-};
 
 /* ── InviteModal (invite friend to current group room) ───────────────────── */
 const InviteModal = ({ onClose, token }) => {

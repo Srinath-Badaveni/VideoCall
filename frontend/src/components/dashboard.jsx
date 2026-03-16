@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../contexts/AuthContext';
 import { useChat } from '../contexts/ChatContext';
 import { API_BASE } from '../config/api';
+import InviteToast from './InviteToast';
 
 const Dashboard = () => {
     const navigate = useNavigate();
@@ -52,6 +53,8 @@ const Dashboard = () => {
 
     return (
         <div style={{ display: 'flex', minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
+            {/* ── Invitation toast (shows even when not in chat) ── */}
+            <InviteToast />
             {/* ── Sidebar ── */}
             <aside className="sidebar" style={{ width: 240, background: 'var(--bg-card)', borderRight: '1px solid var(--border)', display: 'flex', flexDirection: 'column', flexShrink: 0, position: 'sticky', top: 0, height: '100vh' }}>
                 {/* Logo */}
