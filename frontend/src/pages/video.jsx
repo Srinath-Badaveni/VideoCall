@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { LiveKitRoom, VideoConference, RoomAudioRenderer } from "@livekit/components-react";
 import "@livekit/components-styles";
+import { API_BASE } from "../config/api";
 
 export default function VideoMeet() {
     const { url: meetingCode } = useParams();
@@ -21,7 +22,7 @@ export default function VideoMeet() {
 
         const fetchToken = async () => {
             try {
-                const res = await fetch(`http://localhost:8080/api/v1/meetings/${meetingCode}/token`, {
+                const res = await fetch(`${API_BASE}/meetings/${meetingCode}/token`, {
                     headers: { Authorization: `Bearer ${authToken}` }
                 });
                 if (res.status === 404) {
@@ -50,7 +51,7 @@ export default function VideoMeet() {
         }
         setHasJoined(true);
         try {
-            await fetch(`http://localhost:8080/api/v1/meetings/${meetingCode}/join`, {
+            await fetch(`${API_BASE}/meetings/${meetingCode}/join`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${authToken}` }
             });
@@ -63,7 +64,7 @@ export default function VideoMeet() {
         setHasJoined(false);
         setLiveKitToken("");
         try {
-            await fetch(`http://localhost:8080/api/v1/meetings/${meetingCode}/leave`, {
+            await fetch(`${API_BASE}/meetings/${meetingCode}/leave`, {
                 method: "POST",
                 headers: { Authorization: `Bearer ${authToken}` }
             });
