@@ -124,7 +124,7 @@ export default function VideoMeet() {
             <div className="flex-1 h-full relative">
                 <LiveKitRoom
                     video={true}
-                    audio={true}
+                    audio={{ autoGainControl: false, echoCancellation: true, noiseSuppression: false }}
                     token={liveKitToken}
                     serverUrl={LIVEKIT_URL}
                     onDisconnected={handleLeave}
