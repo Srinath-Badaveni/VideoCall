@@ -40,7 +40,24 @@ const Dashboard = () => {
         navigate('/login', { replace: true });  // FIX: was missing navigate
     };
 
-    const handleCreateMeet = () => navigate(`/meet/${uuidv4()}`);
+    const handleCreateMeet = async () => {
+        try {
+            const res = await fetch(`${API_BASE}/meetings`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ title: 'New Meeting' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                navigate(`/meet/${data.data.meetingCode}`);
+            }
+        } catch (e) {
+            console.error("Failed to create meeting", e);
+        }
+    };
     const handleJoinMeet   = () => { if (meetId.trim()) navigate(`/meet/${meetId.trim()}`); };
 
     const onlineIds = new Set(allOnlineUsers.map(u => u.userId));

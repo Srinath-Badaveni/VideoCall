@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email            String   @unique
+  password         String
+  pushSubscription String?
+  createdAt        DateTime @default(now())
+
+  // Relations
+  meetingsHosted    Meeting[]
+  participants      MeetingParticipant[]
+  messagesSent      ChatMessage[]
+  
+  sentRequests      Friendship[] @relation("SentRequests")
+  receivedRequests  Friendship[] @relation("ReceivedRequests")
+}
+
+model Friendship {
+  id          String   @id @default(uuid())
+  requesterId String
+  recipientId String
+  status      String   @default("pending") // "pending", "accepted", "rejected"
+  createdAt   DateTime @default(now())
+
+  requester   User @relation("SentRequests", fields: [requesterId], references: [id])
+  recipient   User @relation("ReceivedRequests", fields: [recipientId], references: [id])
+
+  @@unique([requesterId, recipientId])
+}
+
+model Meeting {
+  id                 String   @id @default(uuid())
+  meetingCode        String   @unique
+  title              String?
+  hostId             String
+  status             String   @default("ACTIVE") // SCHEDULED, ACTIVE, ENDED
+  isLocked           Boolean  @default(false)
+  waitingRoomEnabled Boolean  @default(false)
+  passwordHash       String?
+  maxParticipants    Int      @default(100)
+  createdAt          DateTime @default(now())
+  startedAt          DateTime?
+  endedAt            DateTime?
+
+  host         User                 @relation(fields: [hostId], references: [id])
+  rooms        MeetingRoom[]
+  participants MeetingParticipant[]
+}
+
+model MeetingRoom {
+  id        String   @id @default(uuid())
+  meetingId String
+  name      String
+  type      String   @default("MAIN") // MAIN, BREAKOUT
+  capacity  Int      @default(100)
+  createdAt DateTime @default(now())
+  closedAt  DateTime?
+
+  meeting Meeting @relation(fields: [meetingId], references: [id])
+}
+
+model MeetingParticipant {
+  id        String   @id @default(uuid())
+  meetingId String
+  userId    String
+  role      String   @default("PARTICIPANT") // HOST, CO_HOST, PARTICIPANT
+  status    String   @default("JOINED") // INVITED, WAITING, ADMITTED, JOINED, LEFT
+  joinedAt  DateTime @default(now())
+  leftAt    DateTime?
+
+  meeting  Meeting          @relation(fields: [meetingId], references: [id])
+  user     User             @relation(fields: [userId], references: [id])
+  sessions MeetingSession[]
+
+  @@unique([meetingId, userId])
+}
+
+model MeetingSession {
+  id            String   @id @default(uuid())
+  participantId String
+  sessionId     String   @unique
+  deviceInfo    String?
+  connectionState String @default("CONNECTING") // CONNECTING, CONNECTED, DISCONNECTED
+  reconnectCount Int     @default(0)
+  joinedAt      DateTime @default(now())
+  leftAt        DateTime?
+
+  participant MeetingParticipant @relation(fields: [participantId], references: [id])
+}
+
+model ChatMessage {
+  id             String   @id @default(uuid())
+  roomId         String   // Can be a meetingCode or a direct conversation ID
+  senderId       String
+  name           String
+  text           String
+  timestamp      DateTime @default(now())
+
+  sender         User     @relation(fields: [senderId], references: [id])
+}

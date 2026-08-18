@@ -24,6 +24,16 @@ export const getByCode = async (req, res) => {
     });
 };
 
+export const getToken = async (req, res) => {
+    const { code } = req.params;
+    const token = await meetingService.generateLiveKitToken(code, req.user);
+    
+    res.status(200).json({
+        success: true,
+        data: { token }
+    });
+};
+
 export const join = async (req, res) => {
     // In Stage 2, this will create a MeetingParticipant and MeetingSession record
     res.status(200).json({

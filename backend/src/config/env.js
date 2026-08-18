@@ -33,8 +33,13 @@ const config = Object.freeze({
     isDev: optional("NODE_ENV", "development") === "development",
     isProd: optional("NODE_ENV", "development") === "production",
 
-    // Database (MongoDB for now — PostgreSQL in Stage 2)
+    // Database
     mongodbUrl: required("MONGODB_URL"),
+
+    // LiveKit SFU
+    livekitUrl: required("LIVEKIT_URL"),
+    livekitApiKey: required("LIVEKIT_API_KEY"),
+    livekitApiSecret: required("LIVEKIT_API_SECRET"),
 
     // JWT
     jwtSecret: required("JWT_SECRET"),

@@ -4,6 +4,8 @@
  * Centralized Socket.IO configuration.
  */
 import { Server } from "socket.io";
+import { createAdapter } from "@socket.io/redis-adapter";
+import Redis from "ioredis";
 import config from "../config/env.js";
 import logger from "../utils/logger.js";
 import { socketAuthMiddleware } from "./auth.js";
@@ -21,7 +23,13 @@ export function initializeSockets(httpServer) {
         }
     });
 
-    // In Stage 2, add Redis adapter here for horizontal scaling
+    if (config.redisUrl) {
+        const pubClient = new Redis(config.redisUrl);
+        const subClient = pubClient.duplicate();
+        
+        io.adapter(createAdapter(pubClient, subClient));
+        logger.info("Socket.IO Redis adapter attached");
+    }
 
     // Main namespace
     io.use(socketAuthMiddleware);
