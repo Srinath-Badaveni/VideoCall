@@ -17,7 +17,7 @@ import registerPresenceHandlers from "./presence/handler.js";
 export function initializeSockets(httpServer) {
     const io = new Server(httpServer, {
         cors: {
-            origin: config.corsOrigin.split(",").map(s => s.trim()),
+            origin: true,
             methods: ["GET", "POST"],
             credentials: true
         }
