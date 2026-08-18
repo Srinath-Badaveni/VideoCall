@@ -57,8 +57,8 @@ const config = Object.freeze({
     redisUrl: optional("REDIS_URL", ""),
 
     // Rate Limiting
-    rateLimitWindowMs: parseInt(optional("RATE_LIMIT_WINDOW_MS", "900000"), 10), // 15 min
-    rateLimitMax: parseInt(optional("RATE_LIMIT_MAX", "100"), 10),
+    rateLimitWindowMs: parseInt(optional("RATE_LIMIT_WINDOW_MS", "60000"), 10), // 1 min
+    rateLimitMax: parseInt(optional("RATE_LIMIT_MAX", "2000"), 10),
 });
 
 export default config;
