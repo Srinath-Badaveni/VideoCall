@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
+import config from "../config/env.js";
 
 const userSchema = new mongoose.Schema({
     name: {
@@ -33,11 +34,12 @@ const userSchema = new mongoose.Schema({
 userSchema.methods.generateAuthToken = function () {
     const token = jwt.sign(
         { _id: this._id, email: this.email, name: this.name },
-        process.env.JWT_SECRET || "your_secret_key_here",
-        { expiresIn: "3h" }
+        config.jwtSecret,
+        { expiresIn: config.jwtExpiresIn }
     );
     return token;
 };
 
 const User = mongoose.model("User", userSchema);
 export default User;
+

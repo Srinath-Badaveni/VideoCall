@@ -5,19 +5,21 @@
  */
 import webpush from "web-push";
 import User from "../models/user.model.js";
+import config from "../config/env.js";
+import logger from "../utils/logger.js";
 
 // Configure VAPID (called once on startup from app.js)
 export const initWebPush = () => {
     webpush.setVapidDetails(
-        process.env.VAPID_EMAIL || "mailto:admin@videocaller.app",
-        process.env.VAPID_PUBLIC_KEY,
-        process.env.VAPID_PRIVATE_KEY
+        config.vapidEmail,
+        config.vapidPublicKey,
+        config.vapidPrivateKey
     );
 };
 
 /** GET /api/v1/push/vapid-public-key — send public key to client */
 export const getVapidPublicKey = (req, res) => {
-    res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+    res.json({ publicKey: config.vapidPublicKey });
 };
 
 /** POST /api/v1/push/subscribe — save browser push subscription */
@@ -67,13 +69,13 @@ export const sendPushToUser = async (userId, title, body, url = "/chat") => {
 
         const payload = JSON.stringify({ title, body, url });
         await webpush.sendNotification(user.pushSubscription, payload);
-        console.log(`[Push] Sent to ${userId}: ${title}`);
+        logger.info({ userId }, `[Push] Sent: ${title}`);
     } catch (err) {
         if (err.statusCode === 410 || err.statusCode === 404) {
             // Subscription expired — clear it
             await User.findByIdAndUpdate(userId, { $unset: { pushSubscription: 1 } });
         } else {
-            console.error("[Push] Send error:", err.message);
+            logger.error({ err, userId }, "[Push] Send error");
         }
     }
 };

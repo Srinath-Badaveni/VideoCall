@@ -1,4 +1,21 @@
+/**
+ * socketManager.js — Default namespace Socket.IO handler.
+ *
+ * Handles video-call signalling (WebRTC negotiations, joining/leaving rooms).
+ *
+ * SECURITY CHANGES (Stage 0):
+ *   - JWT authentication required for all connections
+ *   - CORS restricted to configured origins
+ *   - Structured logging via Pino
+ *
+ * NOTE: The in-memory `connections`, `messages`, `timeOnline` objects are a
+ * scaling blocker (P0 #2). They will be replaced by Redis in Stage 2.
+ * They are kept for now to preserve existing functionality.
+ */
 import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
+import config from "../config/env.js";
+import logger from "../utils/logger.js";
 
 let connections = {};
 let messages = {};
@@ -7,15 +24,28 @@ let timeOnline = {};
 export const connectToSocket = (server) => {
     const io = new Server(server, {
         cors: {
-            origin: "*",
+            origin: config.corsOrigin.split(",").map((s) => s.trim()),
             methods: ["GET", "POST"],
-            allowedHeaders: ["*"],
             credentials: true,
         },
     });
 
+    // ── AUTH MIDDLEWARE ──────────────────────────────────────────────────────
+    io.use((socket, next) => {
+        const token = socket.handshake.auth?.token;
+        if (!token) {
+            return next(new Error("Authentication required: no token supplied"));
+        }
+        try {
+            socket.user = jwt.verify(token, config.jwtSecret);
+            next();
+        } catch {
+            return next(new Error("Authentication required: invalid token"));
+        }
+    });
+
     io.on("connection", (socket) => {
-        console.log("something is connected: ", socket.id);
+        logger.info({ socketId: socket.id, userId: socket.user?._id }, "Video socket connected");
 
         socket.on("join-room", (roomId) => {
             if (connections[roomId] === undefined) {
@@ -82,7 +112,7 @@ export const connectToSocket = (server) => {
 
         socket.on("disconnect", () => {
             const diffTime = Math.abs(timeOnline[socket.id] - Date.now());
-            console.log(`Socket ${socket.id} disconnected after ${diffTime} ms`);
+            logger.info({ socketId: socket.id, durationMs: diffTime }, "Video socket disconnected");
 
             let roomKey;
             for (const [k, v] of Object.entries(connections)) {

@@ -120,6 +120,7 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
         fetchUserProfile(storedToken);
         scheduleAutoLogout(SESSION_DURATION_MS - elapsed);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     /* ── Cleanup on unmount ──────────────────────────────────────────────── */

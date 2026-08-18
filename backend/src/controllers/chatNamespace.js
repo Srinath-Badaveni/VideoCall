@@ -8,6 +8,8 @@
  */
 
 import jwt from "jsonwebtoken";
+import config from "../config/env.js";
+import logger from "../utils/logger.js";
 import { areFriends } from "./friend.controller.js";
 import ChatMessage from "../models/chatMessage.model.js";
 import { sendPushToUser } from "./push.controller.js";
@@ -25,8 +27,7 @@ const MAX_HISTORY = 50; // messages loaded from DB per room
 let _chatNs = null;
 
 /** JWT verification */
-const verifyToken = (token) =>
-    jwt.verify(token, process.env.JWT_SECRET || "your_secret_key_here");
+const verifyToken = (token) => jwt.verify(token, config.jwtSecret);
 
 /** Count sockets in a Socket.IO room */
 function roomSize(roomId) {
@@ -113,7 +114,7 @@ export const connectToChatSocket = (io) => {
     // ── CONNECTION ───────────────────────────────────────────────────────────
     chatNs.on("connection", (socket) => {
         const { _id: userId, name, email } = socket.user;
-        console.log(`[Chat] ${name} (${socket.id}) connected`);
+        logger.info({ userId, socketId: socket.id }, `[Chat] ${name} connected`);
 
         // Register immediately so the user shows as online everywhere
         // (even before they join a specific room)
@@ -295,7 +296,7 @@ export const connectToChatSocket = (io) => {
             if (user?.roomId) leaveRoom(chatNs, socket, user.roomId);
             if (userSockets[userId] === socket.id) delete userSockets[userId];
             delete onlineUsers[socket.id];
-            console.log(`[Chat] ${name} (${socket.id}) disconnected`);
+            logger.info({ userId, socketId: socket.id }, `[Chat] ${name} disconnected`);
 
             // Tell everyone this user went offline
             const users = Object.values(onlineUsers).map((u) => ({

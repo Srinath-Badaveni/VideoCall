@@ -48,6 +48,7 @@ export default function FriendsPage() {
         setLoading(false);
     }, [token]);
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => { loadAll(); connect(); }, []);
 
     const handleAddFriend = async (e) => {

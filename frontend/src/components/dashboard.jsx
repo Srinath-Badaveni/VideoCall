@@ -31,6 +31,7 @@ const Dashboard = () => {
             setFriends(fl.friends || []);
             setPendingCount((pl.requests || []).length);
         }).catch(() => {});
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
 
     // ── Handlers ───────────────────────────────────────────────────────────

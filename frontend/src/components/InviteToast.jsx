@@ -17,8 +17,7 @@ import { useAuth } from '../contexts/AuthContext';
  * automatically taken to the Chat page.
  */
 const InviteToast = () => {
-    const { pendingInvite, inviteNotification, acceptInvitation, rejectInvitation, joinRoom } = useChat();
-    const { user } = useAuth();
+    const { pendingInvite, inviteNotification, acceptInvitation, rejectInvitation } = useChat();
     const navigate = useNavigate();
 
     if (!pendingInvite && !inviteNotification) return null;

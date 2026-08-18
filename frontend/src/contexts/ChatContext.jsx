@@ -57,7 +57,7 @@ export const ChatProvider = ({ children }) => {
             socketRef.current.disconnect();
         }
 
-        const socket = io(`${CHAT_SERVER_URL}/chat`, {
+        const socket = io(CHAT_SERVER_URL, {
             auth: { token },
             reconnection: true,
             reconnectionDelay: 1000,
@@ -161,6 +161,7 @@ export const ChatProvider = ({ children }) => {
             setCurrentUser(null);
             setAllOnlineUsers([]);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [token]);
 
     /* Cleanup on component unmount */

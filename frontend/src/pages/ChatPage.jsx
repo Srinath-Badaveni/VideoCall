@@ -58,7 +58,11 @@ const InviteModal = ({ onClose, token }) => {
             .then((d) => { setFriends(d.friends || []); setLoading(false); })
             .catch(() => setLoading(false));
         // Cleanup all intervals on close
-        return () => Object.values(intervalRefs.current).forEach(({ push, tick }) => { clearInterval(push); clearInterval(tick); });
+        return () => {
+            const refs = intervalRefs.current;
+            Object.values(refs).forEach(({ push, tick }) => { clearInterval(push); clearInterval(tick); });
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const onlineIds = new Set(allOnlineUsers.map((u) => u.userId));
