@@ -2,7 +2,7 @@
  * meeting.routes.js
  */
 import { Router } from "express";
-import { create, getByCode, join, leave, getToken } from "../controllers/meeting.controller.js";
+import { create, getByCode, join, leave, getToken, getHistory, getUpcomingMeetings } from "../controllers/meeting.controller.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
@@ -10,6 +10,8 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.get("/history", asyncHandler(getHistory));
+router.get("/upcoming", asyncHandler(getUpcomingMeetings));
 router.post("/", asyncHandler(create));
 router.get("/:code", asyncHandler(getByCode));
 router.get("/:code/token", asyncHandler(getToken));

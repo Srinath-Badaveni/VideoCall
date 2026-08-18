@@ -19,6 +19,7 @@ import config from "../config/env.js";
 export const apiLimiter = rateLimit({
     windowMs: config.rateLimitWindowMs,
     max: config.rateLimitMax,
+    skip: () => config.nodeEnv === "development",
     standardHeaders: true,
     legacyHeaders: false,
     message: {
@@ -37,6 +38,7 @@ export const apiLimiter = rateLimit({
 export const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 20,
+    skip: () => config.nodeEnv === "development",
     standardHeaders: true,
     legacyHeaders: false,
     message: {

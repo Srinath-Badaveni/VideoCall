@@ -12,6 +12,7 @@ import config from "../config/env.js";
 import logger from "../utils/logger.js";
 import { areFriends } from "./friend.controller.js";
 import ChatMessage from "../models/chatMessage.model.js";
+import Group from "../models/group.model.js";
 import { sendPushToUser } from "./push.controller.js";
 
 // ── In-memory stores ─────────────────────────────────────────────────────────
@@ -40,13 +41,23 @@ function makeInviteId() {
     return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-/** Serialise a Mongoose ChatMessage doc to the plain object the client expects */
 function serialise(doc) {
+    let serializedReactions = {};
+    if (doc.reactions) {
+        if (doc.reactions instanceof Map) {
+            serializedReactions = Object.fromEntries(doc.reactions);
+        } else if (typeof doc.reactions === 'object') {
+            serializedReactions = { ...doc.reactions };
+        }
+    }
+
     return {
         _id: doc._id,
         userId: doc.userId,
         sender: doc.sender,
         message: doc.message,
+        reactions: serializedReactions,
+        replyTo: doc.replyTo,
         timestamp: doc.createdAt?.toISOString() ?? new Date().toISOString(),
     };
 }
@@ -65,14 +76,17 @@ async function loadHistory(roomId) {
 }
 
 /** Save a message to DB */
-async function persistMessage(roomId, userId, sender, message) {
+async function persistMessage(roomId, userId, sender, message, replyTo = null) {
     try {
-        const doc = await ChatMessage.create({ roomId, userId, sender, message });
+        const payload = { roomId, userId, sender, message };
+        if (replyTo) payload.replyTo = replyTo;
+        
+        const doc = await ChatMessage.create(payload);
         return serialise(doc);
     } catch (err) {
         console.error("[Chat] persistMessage error:", err.message);
         // Return a plain object so broadcasting still works even if DB is down
-        return { userId, sender, message, timestamp: new Date().toISOString() };
+        return { _id: Date.now().toString(), userId, sender, message, replyTo, reactions: {}, timestamp: new Date().toISOString() };
     }
 }
 
@@ -143,6 +157,24 @@ export const connectToChatSocket = (io) => {
         socket.on("join-chat-room", async ({ roomId }) => {
             if (!roomId) return;
 
+            // Security check: If it's not a DM, verify it's a valid Group and user is a member
+            if (!roomId.startsWith("dm_")) {
+                try {
+                    const group = await Group.findById(roomId);
+                    if (!group) {
+                        socket.emit("chat-error", { message: "Group not found" });
+                        return;
+                    }
+                    if (!group.members.some(id => id.toString() === userId.toString())) {
+                        socket.emit("chat-error", { message: "You are not a member of this group" });
+                        return;
+                    }
+                } catch (err) {
+                    socket.emit("chat-error", { message: "Invalid room ID" });
+                    return;
+                }
+            }
+
             // Leave previous room if any (stay connected)
             const prev = onlineUsers[socket.id];
             if (prev?.roomId) leaveRoom(chatNs, socket, prev.roomId);
@@ -183,12 +215,12 @@ export const connectToChatSocket = (io) => {
         });
 
         // ── chat-message ─────────────────────────────────────────────────────
-        socket.on("chat-message", async ({ message }) => {
+        socket.on("chat-message", async ({ message, replyTo }) => {
             const user = onlineUsers[socket.id];
-            if (!user || !message?.trim()) return;
+            if (!user || !user.roomId || !message?.trim()) return;
 
             // Persist to MongoDB
-            const msgObj = await persistMessage(user.roomId, userId, user.name, message.trim());
+            const msgObj = await persistMessage(user.roomId, userId, user.name, message.trim(), replyTo);
 
             // Broadcast to everyone in the room
             chatNs.to(user.roomId).emit("chat-message", msgObj);
@@ -201,11 +233,40 @@ export const connectToChatSocket = (io) => {
                     maybeNotify(recipientId, user.name, message.trim(), user.roomId);
                 }
             }
-            // ── Push for regular rooms: notify all members NOT in the room ──
-            else {
-                // (Opt-in: emit push to offline members who may have been in this room)
-                // For now we only push DM recipients to keep notifications focused.
-                // To also push group room members, remove the `if (user.roomId.startsWith("dm_"))` guard above.
+        });
+
+        // ── chat-reaction ────────────────────────────────────────────────────
+        socket.on("chat-reaction", async ({ messageId, emoji }) => {
+            const user = onlineUsers[socket.id];
+            if (!user || !user.roomId || !messageId || !emoji) return;
+
+            try {
+                const msg = await ChatMessage.findById(messageId);
+                if (!msg || msg.roomId !== user.roomId) return; // Must be in same room
+
+                const currentReacts = msg.reactions.get(emoji) || [];
+                const userIndex = currentReacts.indexOf(user.name);
+
+                if (userIndex > -1) {
+                    currentReacts.splice(userIndex, 1);
+                } else {
+                    currentReacts.push(user.name);
+                }
+
+                if (currentReacts.length === 0) {
+                    msg.reactions.delete(emoji);
+                } else {
+                    msg.reactions.set(emoji, currentReacts);
+                }
+
+                await msg.save();
+                
+                chatNs.to(user.roomId).emit("chat-reaction", {
+                    messageId,
+                    reactions: Object.fromEntries(msg.reactions)
+                });
+            } catch (err) {
+                console.error("[Chat] reaction error:", err.message);
             }
         });
 

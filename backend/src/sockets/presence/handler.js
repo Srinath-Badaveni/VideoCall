@@ -23,4 +23,16 @@ export default function registerPresenceHandlers(io, socket) {
             }
         }
     });
+
+    socket.on("call-user", ({ targetUserId, meetingCode }) => {
+        // Find all sockets for targetUserId
+        for (const [sId, uId] of onlineUsers.entries()) {
+            if (uId.toString() === targetUserId.toString()) {
+                io.to(sId).emit("incoming-call", {
+                    meetingCode,
+                    callerName: socket.user?.name || "Someone"
+                });
+            }
+        }
+    });
 }

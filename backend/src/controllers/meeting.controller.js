@@ -35,7 +35,8 @@ export const getToken = async (req, res) => {
 };
 
 export const join = async (req, res) => {
-    // In Stage 2, this will create a MeetingParticipant and MeetingSession record
+    const { code } = req.params;
+    await meetingService.joinMeeting(code, req.user._id);
     res.status(200).json({
         success: true,
         message: "Joined meeting successfully"
@@ -43,9 +44,26 @@ export const join = async (req, res) => {
 };
 
 export const leave = async (req, res) => {
-    // In Stage 2, this will update MeetingParticipant and MeetingSession records
+    const { code } = req.params;
+    await meetingService.leaveMeeting(code, req.user._id);
     res.status(200).json({
         success: true,
         message: "Left meeting successfully"
+    });
+};
+
+export const getHistory = async (req, res) => {
+    const history = await meetingService.getCallHistory(req.user._id);
+    res.status(200).json({
+        success: true,
+        data: history
+    });
+};
+
+export const getUpcomingMeetings = async (req, res) => {
+    const upcoming = await meetingService.getUpcomingMeetings(req.user._id);
+    res.status(200).json({
+        success: true,
+        data: upcoming
     });
 };

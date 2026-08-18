@@ -10,6 +10,9 @@ import MessageModal from "./components/MessageModal";
 import VideoMeet from "./pages/video";
 import ChatPage from "./pages/ChatPage";
 import FriendsPage from "./pages/FriendsPage";
+import TeamsPage from "./pages/TeamsPage";
+import CalendarPage from "./pages/CalendarPage";
+import Layout from "./components/Layout";
 
 function App() {
   return (
@@ -20,10 +23,12 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard" element={<Layout><Dashboard /></Layout>} />
             <Route path="/meet/:url" element={<VideoMeet />} />
-            <Route path="/chat" element={<ChatPage />} />
-            <Route path="/friends" element={<FriendsPage />} />
+            <Route path="/chat" element={<Layout><ChatPage /></Layout>} />
+            <Route path="/friends" element={<Layout><FriendsPage /></Layout>} />
+            <Route path="/teams" element={<Layout><TeamsPage /></Layout>} />
+            <Route path="/calendar" element={<Layout><CalendarPage /></Layout>} />
           </Routes>
           <MessageModal />
         </Router>

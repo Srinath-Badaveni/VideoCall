@@ -57,7 +57,7 @@ export const ChatProvider = ({ children }) => {
             socketRef.current.disconnect();
         }
 
-        const socket = io(CHAT_SERVER_URL, {
+        const socket = io(`${CHAT_SERVER_URL}/chat`, {
             auth: { token },
             reconnection: true,
             reconnectionDelay: 1000,
@@ -85,6 +85,11 @@ export const ChatProvider = ({ children }) => {
         // ── Chat events ────────────────────────────────────────────────────
         socket.on("message-history", (history) => setMessages(history));
         socket.on("chat-message", (msg) => setMessages((prev) => [...prev, msg]));
+        socket.on("chat-reaction", ({ messageId, reactions }) => {
+            setMessages((prev) => prev.map((msg) => 
+                msg._id === messageId ? { ...msg, reactions } : msg
+            ));
+        });
         socket.on("room-user-count", ({ count }) => setOnlineCount(count));
         socket.on("room-users", (users) => setRoomUsers(users));
         socket.on("online-users", (users) => setAllOnlineUsers(users));
@@ -216,11 +221,16 @@ export const ChatProvider = ({ children }) => {
         // Keep allOnlineUsers — they're still globally online
     }, []);
 
-    /* ── Message / typing ────────────────────────────────────────────────── */
+    /* ── Message / typing / reactions ────────────────────────────────────── */
 
-    const sendMessage = useCallback((message) => {
+    const sendMessage = useCallback((message, replyTo = null) => {
         if (!socketRef.current?.connected || !message.trim()) return;
-        socketRef.current.emit("chat-message", { message });
+        socketRef.current.emit("chat-message", { message, replyTo });
+    }, []);
+
+    const sendReaction = useCallback((messageId, emoji) => {
+        if (!socketRef.current?.connected || !messageId || !emoji) return;
+        socketRef.current.emit("chat-reaction", { messageId, emoji });
     }, []);
 
     const typingTimeoutRef = useRef(null);
@@ -250,6 +260,8 @@ export const ChatProvider = ({ children }) => {
         socketRef.current?.emit("get-online-users");
     }, []);
 
+    const getSocket = useCallback(() => socketRef.current, []);
+
     /* ── Context value ───────────────────────────────────────────────────── */
 
     return (
@@ -258,8 +270,9 @@ export const ChatProvider = ({ children }) => {
                 connected, inRoom, messages, onlineCount, typingUsers,
                 currentUser, roomUsers, allOnlineUsers, error,
                 pendingInvite, inviteNotification,
-                connect, joinRoom, sendMessage, sendTyping, leaveRoom,
+                connect, joinRoom, sendMessage, sendReaction, sendTyping, leaveRoom,
                 sendInvitation, acceptInvitation, rejectInvitation, refreshOnlineUsers,
+                getSocket,
             }}
         >
             {children}

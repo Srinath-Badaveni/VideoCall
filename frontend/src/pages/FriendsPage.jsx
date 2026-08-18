@@ -20,7 +20,7 @@ const Avatar = ({ name, size = 38 }) => (
 
 export default function FriendsPage() {
     const { token, user }                                      = useAuth();
-    const { connect, sendInvitation, allOnlineUsers, inRoom, joinRoom } = useChat();
+    const { connect, sendInvitation, allOnlineUsers, inRoom, joinRoom, getSocket } = useChat();
     const navigate                                             = useNavigate();
 
     const [friends, setFriends] = useState([]);
@@ -65,29 +65,36 @@ export default function FriendsPage() {
         setAddLoading(false);
     };
 
+    const handleCallFriend = async (friendId) => {
+        try {
+            const res = await fetch(`${API_BASE}/meetings`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ title: 'Direct Call' })
+            });
+            const data = await res.json();
+            if (data.success) {
+                const meetingCode = data.data.meetingCode;
+                const socket = getSocket();
+                if (socket) {
+                    socket.emit("call-user", { targetUserId: friendId, meetingCode });
+                }
+                navigate(`/meet/${meetingCode}`);
+            }
+        } catch (e) {
+            console.error("Failed to start call", e);
+        }
+    };
 
     const handleRespond = async (id, action) => { await apiFetch(`/friends/respond/${id}`, token, { method: "POST", body: JSON.stringify({ action }) }); loadAll(); };
     const handleRemove  = async (id) => { if (!window.confirm("Remove this friend?")) return; await apiFetch(`/friends/${id}`, token, { method: "DELETE" }); loadAll(); };
     const handleDM      = (f) => { const ids = [user._id, f._id.toString()].sort(); joinRoom(`dm_${ids[0]}_${ids[1]}`, user.name, f.name); navigate("/chat"); };
 
     return (
-        <div style={{ minHeight: '100vh', fontFamily: 'Inter, sans-serif' }}>
-            {/* Top nav */}
-            <header style={{ position: 'sticky', top: 0, zIndex: 50, background: 'rgba(8,9,13,.85)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--border)', padding: 'clamp(.6rem,3vw,1rem) clamp(.75rem,4vw,2rem)', display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-                <button onClick={() => navigate("/dashboard")} className="btn-ghost" style={{ fontSize: '.82rem', padding: '.45rem .9rem' }}>
-                    ← Dashboard
-                </button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ width: 30, height: 30, borderRadius: 8, background: 'linear-gradient(135deg,#6366f1,#818cf8)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <svg viewBox="0 0 24 24" width={14} height={14} fill="white"><path d="M15 10l4.553-2.069A1 1 0 0121 8.87v6.26a1 1 0 01-1.447.9L15 14v-4zM3 8a2 2 0 012-2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8z"/></svg>
-                    </div>
-                    <h1 style={{ fontWeight: 800, fontSize: '1rem', letterSpacing: '-0.3px' }}>Friends</h1>
-                    {pending.length > 0 && (
-                        <span style={{ background: '#ef4444', color: '#fff', fontSize: '.65rem', fontWeight: 800, borderRadius: 99, padding: '2px 8px' }}>{pending.length} pending</span>
-                    )}
-                </div>
-            </header>
-
+        <div style={{ minHeight: '100vh', fontFamily: 'Inter, sans-serif', width: '100%' }}>
             <div style={{ maxWidth: 680, margin: '0 auto', padding: 'clamp(1rem, 4vw, 2rem) clamp(.75rem, 4vw, 1.5rem)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
 
                 {/* Add friend */}
@@ -173,29 +180,35 @@ export default function FriendsPage() {
                             {friends.map(f => {
                                 const isOnline = onlineIds.has(f._id?.toString());
                                 return (
-                                    <div key={f._id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '.85rem', borderRadius: 12, background: 'var(--bg-card2)', transition: 'background .15s' }}
+                                    <div key={f._id} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '.85rem', borderRadius: 12, background: 'var(--bg-card2)', transition: 'background .15s', flexWrap: 'wrap' }}
                                         onMouseEnter={e => e.currentTarget.style.background = '#1c1e2e'}
                                         onMouseLeave={e => e.currentTarget.style.background = 'var(--bg-card2)'}>
                                         <div style={{ position: 'relative' }}>
                                             <Avatar name={f.name} />
                                             <span style={{ position: 'absolute', bottom: 0, right: 0, width: 11, height: 11, borderRadius: '50%', background: isOnline ? '#22c55e' : '#374151', border: '2px solid var(--bg-card2)' }} />
                                         </div>
-                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ flex: '1 1 120px', minWidth: 0 }}>
                                             <p style={{ fontWeight: 600, fontSize: '.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.name}</p>
                                             <p style={{ fontSize: '.75rem', color: isOnline ? '#4ade80' : 'var(--text-secondary)', fontWeight: 500 }}>{isOnline ? '● online' : 'offline'}</p>
                                         </div>
-                                        <div style={{ display: 'flex', gap: 6 }}>
-                                            <button onClick={() => handleDM(f)} className="btn-ghost" style={{ fontSize: '.78rem', padding: '.4rem .85rem' }}>
-                                                💬 Message
+                                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'flex-end', flex: '1 0 auto' }}>
+                                            {isOnline && (
+                                                <button onClick={() => handleCallFriend(f._id?.toString())}
+                                                    style={{ padding: '.4rem .7rem', fontSize: '.78rem', borderRadius: 8, background: '#22c55e', color: 'white', fontWeight: 600, border: 'none', cursor: 'pointer' }}>
+                                                    📞 Call
+                                                </button>
+                                            )}
+                                            <button onClick={() => handleDM(f)} className="btn-ghost" style={{ fontSize: '.78rem', padding: '.4rem .7rem' }}>
+                                                💬 Msg
                                             </button>
                                             {isOnline && inRoom && (
                                                 <button onClick={() => sendInvitation(f._id?.toString())}
-                                                    style={{ padding: '.4rem .85rem', fontSize: '.78rem', borderRadius: 8, border: '1px solid rgba(34,197,94,.3)', background: 'rgba(34,197,94,.08)', color: '#4ade80', cursor: 'pointer', fontWeight: 600 }}>
+                                                    style={{ padding: '.4rem .7rem', fontSize: '.78rem', borderRadius: 8, border: '1px solid rgba(34,197,94,.3)', background: 'rgba(34,197,94,.08)', color: '#4ade80', cursor: 'pointer', fontWeight: 600 }}>
                                                     Invite
                                                 </button>
                                             )}
                                             <button onClick={() => handleRemove(f.friendshipId)}
-                                                style={{ padding: '.4rem .6rem', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem', borderRadius: 6, transition: 'color .15s' }}
+                                                style={{ padding: '.4rem .5rem', background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1rem', borderRadius: 6, transition: 'color .15s' }}
                                                 onMouseEnter={e => e.currentTarget.style.color = '#f87171'}
                                                 onMouseLeave={e => e.currentTarget.style.color = 'var(--text-secondary)'}>
                                                 ✕

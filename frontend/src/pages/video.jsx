@@ -43,17 +43,33 @@ export default function VideoMeet() {
         fetchToken();
     }, [hasJoined, meetingCode, authToken]);
 
-    const handleJoin = () => {
+    const handleJoin = async () => {
         if (!user) {
             navigate("/login");
             return;
         }
         setHasJoined(true);
+        try {
+            await fetch(`http://localhost:8080/api/v1/meetings/${meetingCode}/join`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${authToken}` }
+            });
+        } catch (e) {
+            console.error(e);
+        }
     };
 
-    const handleLeave = () => {
+    const handleLeave = async () => {
         setHasJoined(false);
         setLiveKitToken("");
+        try {
+            await fetch(`http://localhost:8080/api/v1/meetings/${meetingCode}/leave`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${authToken}` }
+            });
+        } catch (e) {
+            console.error(e);
+        }
         navigate("/dashboard");
     };
 

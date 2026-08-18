@@ -25,6 +25,7 @@ import pushRoutes from "./src/routes/push.routes.js";
 import friendRoutes from "./src/routes/friend.routes.js";
 import meetingRoutes from "./src/routes/meeting.routes.js";
 import healthRoutes from "./src/routes/health.routes.js";
+import groupRoutes from "./src/routes/group.routes.js";
 
 import { initWebPush } from "./src/controllers/push.controller.js";
 import { errorHandler } from "./src/middleware/errorHandler.js";
@@ -33,9 +34,12 @@ import { apiLimiter, authLimiter } from "./src/middleware/rateLimiter.js";
 const app = express();
 const server = createServer(app);
 
+import { connectToChatSocket } from "./src/controllers/chatNamespace.js";
+
 // ── Socket.IO ────────────────────────────────────────────────────────────────
 // Initialize the centralized socket manager (which handles namespaces and auth)
-initializeSockets(server);
+const io = initializeSockets(server);
+connectToChatSocket(io);
 
 // ── Security Middleware ──────────────────────────────────────────────────────
 app.use(helmet({
@@ -71,6 +75,7 @@ app.use("/api/v1/chat", chatRoutes);
 app.use("/api/v1/push", pushRoutes);
 app.use("/api/v1/friends", friendRoutes);
 app.use("/api/v1/health", healthRoutes);
+app.use("/api/v1/groups", groupRoutes);
 
 // ── Centralized Error Handler (must be AFTER all routes) ─────────────────────
 app.use(errorHandler);

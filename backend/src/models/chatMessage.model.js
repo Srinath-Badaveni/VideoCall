@@ -10,6 +10,16 @@ const chatMessageSchema = new mongoose.Schema(
         userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
         sender: { type: String, required: true },       // display name at time of sending
         message: { type: String, required: true, maxlength: 4000 },
+        reactions: {
+            type: Map,
+            of: [String],
+            default: {}
+        },
+        replyTo: {
+            messageId: { type: String },
+            sender: { type: String },
+            message: { type: String }
+        }
     },
     {
         timestamps: true,                               // createdAt used as canonical timestamp

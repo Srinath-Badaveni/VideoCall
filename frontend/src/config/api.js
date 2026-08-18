@@ -12,3 +12,6 @@ export default server_api;
 
 /** REST base path — import this for all HTTP fetch calls */
 export const API_BASE = `${server_api}/api/v1`;
+
+/** LiveKit WebSocket Server URL */
+export const LIVEKIT_URL = process.env.REACT_APP_LIVEKIT_URL || "wss://video-conf-mgv7ly4n.livekit.cloud";

@@ -15,3 +15,10 @@ export async function create(meetingData) {
 export async function updateStatus(meetingCode, status) {
     return Meeting.findOneAndUpdate({ meetingCode }, { status }, { new: true });
 }
+
+export async function findUpcomingByHostId(hostId) {
+    return Meeting.find({ 
+        hostId, 
+        status: "SCHEDULED" 
+    }).sort({ scheduledAt: 1 });
+}
