@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { LiveKitRoom, VideoConference, RoomAudioRenderer } from "@livekit/components-react";
 import "@livekit/components-styles";
@@ -9,6 +9,7 @@ export default function VideoMeet() {
     const { url: meetingCode } = useParams();
     const { user, token: authToken } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [hasJoined, setHasJoined] = useState(false);
     const [liveKitToken, setLiveKitToken] = useState("");
@@ -46,7 +47,7 @@ export default function VideoMeet() {
 
     const handleJoin = async () => {
         if (!user) {
-            navigate("/login");
+            navigate("/login", { state: { from: location.pathname } });
             return;
         }
         setHasJoined(true);

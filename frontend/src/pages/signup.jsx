@@ -1,14 +1,17 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import server_api from "../config/api";
 
 const Signup = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { login } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError]     = useState("");
     const [formData, setFormData] = useState({ fullName: "", email: "", password: "", confirmPassword: "" });
+
+    const from = location.state?.from || "/dashboard";
 
     const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
@@ -27,7 +30,7 @@ const Signup = () => {
             const result = await res.json();
             if (res.ok) {
                 login(result.token, result.user);
-                navigate("/dashboard", { replace: true });
+                navigate(from, { replace: true });
             } else {
                 setError(result.message || "Signup failed. Please try again.");
             }
